@@ -13,8 +13,6 @@ import hilog from '@ohos.hilog';
 import { PAGFile, PAGSurface } from '@tencent/libpag'
 import { FlutterPagPlayer } from './FlutterPagPlayer';
 
-import flutter_ohos_texture_patch from 'libflutter_ohos_texture_patch.so';
-
 namespace Constants {
   // 原生接口
   export const _nativeInit = "initPag";
@@ -80,7 +78,7 @@ export default class FlutterPagPlugin implements FlutterPlugin, MethodCallHandle
   private channel: MethodChannel | null = null;
   private flutterBinding: FlutterPluginBinding | null = null;
   private playerMap: Map<number, FlutterPagPlayer> = new Map<number, FlutterPagPlayer>();
-  private entryMap: Map<number, SurfaceTextureEntry> = new Map<number, SurfaceTextureEntry>();
+  // private entryMap: Map<number, SurfaceTextureEntry> = new Map<number, SurfaceTextureEntry>();
 
   constructor() {
     Log.setLogLevel(hilog.LogLevel.INFO);
@@ -194,10 +192,7 @@ export default class FlutterPagPlugin implements FlutterPlugin, MethodCallHandle
       let height = pagFile?.height();
       Log.i(FlutterPagPlugin.TAG, `initPagPlayer pagFile width: ${width}; height: ${height}`);
 
-      // TODO: Need update engine to fix it.
-      //  See this issues https://gitee.com/openharmony-sig/flutter_engine/issues/IAXKIK
-      // textureRegistry?.setTextureBufferSize(textureId, width, height);
-      flutter_ohos_texture_patch.setTextureBufferSize(BigInt(surfaceId), width, height);
+      textureRegistry?.setTextureBufferSize(textureId, width, height);
 
       let pagSurface = PAGSurface.FromSurfaceID(surfaceId);
       Log.i(FlutterPagPlugin.TAG,
@@ -230,7 +225,7 @@ export default class FlutterPagPlugin implements FlutterPlugin, MethodCallHandle
       callback.set(Constants._argumentHeight, height + 0.00001);
 
       this.playerMap.set(textureId, pagPlayer);
-      this.entryMap.set(textureId, surfaceTextureEntry);
+      // this.entryMap.set(textureId, surfaceTextureEntry);
 
       // Post to next frame start to avoid crash, otherwise 【Release mode】 will crash.
       // See this issues https://gitee.com/openharmony-sig/flutter_engine/issues/IAYIEG
@@ -261,12 +256,13 @@ export default class FlutterPagPlugin implements FlutterPlugin, MethodCallHandle
       this.playerMap.delete(textureId);
     }
 
-    let surfaceTextureEntry = this.entryMap.get(textureId);
-    if (surfaceTextureEntry != null) {
-      // TODO: ohos not implemented `release` method now
-      // surfaceTextureEntry.release();
-      this.entryMap.delete(textureId);
-    }
+    // let surfaceTextureEntry = this.entryMap.get(textureId);
+    // if (surfaceTextureEntry != null) {
+    //   // TODO: ohos not implemented `release` method now
+    //   // surfaceTextureEntry.release();
+    //   this.entryMap.delete(textureId);
+    // }
+    this.flutterBinding?.getTextureRegistry()?.unregisterTexture(textureId);
   }
 
   private start(call: MethodCall) {
